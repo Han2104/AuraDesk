@@ -1,0 +1,45 @@
+{
+  "name": "auradesk",
+  "version": "1.0.0",
+  "description": "A desktop Pomodoro focus space with ambient audio and Spotify.",
+  "author": "AuraDesk",
+  "license": "MIT",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "package": "electron-forge package",
+    "package:windows": "electron-forge package --platform=win32 --arch=x64",
+    "package:windows:portable": "electron-builder --win portable --x64 && node scripts/copy-windows-portable.cjs"
+  },
+  "engines": {
+    "node": ">=22.17.0"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "8.0.0-alpha.10",
+    "electron": "44.4.5",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "com.auradesk.focus-space",
+    "productName": "AuraDesk",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "client/code.html",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "artifactName": "AuraDesk.exe"
+  }
+}

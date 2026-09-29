@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>25:00 · Focus Space</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@200;300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            lofi: {
+              peach: '#FDE0D2',
+              warm: '#F7E7CE',
+              amber: '#E8985E',
+              dark: '#12131A'
+            }
+          },
+          boxShadow: {
+            'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+            'glow': '0 0 25px -5px rgba(232, 152, 94, 0.3)',
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    /* Custom scrollbar and glassmorphism styling */
+    body {
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    .glass-card {
+      background: rgba(18, 19, 26, 0.65);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+    }
+    
+    .glass-pill {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .glass-pill:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .timer-ring {
+      transition: stroke-dashoffset 0.35s ease-out;
+    }
+
+    /* Ambient pulse on timer running */
+    @keyframes subtlePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.006); }
+    }
+    .timer-running {
+      animation: subtlePulse 4s infinite ease-in-out;
+    }
+
+    /* Hide scrollbars smoothly */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-stone-950 text-white font-sans min-h-screen overflow-x-hidden relative flex flex-col justify-between">
+<!-- Background Image with Overlay -->
+<div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+<img alt="Watercolor Pastel Illustration" class="w-full h-full object-cover object-center filter brightness-[0.88] contrast-[1.02] transition-all duration-700 scale-105" id="bg-image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZrFQeoQ6VwMIcjgLZCXB1RYCMrtkgBeTVdeIM4R2e2PmJsJfgn1_ZMQTY16-vEqnn7r5PK3SU5D16Cj09nMZOivBsiUttdMCfMZhVibnrKKxM23hl7tilnlfskOckM77cgZQatLUhLHB7HnbZixKfNOi4BHxUgM3Sn4frtAJujHeNYh18WZ5hdfXWicY6eGVGe0_8OYwZeE9gyVNx-ERyppbmFuF0BgOJGmKfdUhYkLp72ulul4nzikX3p87W7ubZfQ"/>
+<!-- Deep atmospheric gradients -->
+<div class="absolute inset-0 bg-gradient-to-b from-black/65 via-black/45 to-black/85"></div>
+<div class="absolute inset-0 bg-amber-950/20 mix-blend-soft-light"></div>
+<!-- Subtle grain/rain ambient texture overlay -->
+<div class="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+</div>
+<!-- Main Container -->
+<div class="relative z-10 min-h-screen flex flex-col justify-between px-4 py-5 max-w-md mx-auto w-full">
+<!-- Top Header Bar -->
+<header class="flex items-center justify-between w-full pt-1">
+<div class="flex items-center space-x-2.5 glass-pill px-3 py-1.5 rounded-full border border-white/10 shadow-sm">
+<span class="relative flex h-2.5 w-2.5">
+<span class="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 hidden animate-ping" id="header-pulse-ping"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" id="header-pulse-dot"></span>
+</span>
+<span class="text-xs font-medium tracking-wide text-zinc-200">Focus Space</span>
+</div>
+<!-- Ambient Sound & Zen Mode Controls -->
+<div class="flex items-center space-x-2">
+<!-- Ambient Sound Toggle -->
+<button class="glass-pill p-2 rounded-full text-zinc-300 hover:text-amber-300 transition-all flex items-center justify-center relative group" id="rain-toggle-btn" title="Open Rain Sounds Playlist" aria-expanded="false" aria-controls="rain-playlist-panel">
+<i class="w-4 h-4" data-lucide="cloud-rain"></i>
+<span class="hidden absolute -top-1 -right-1 w-2 h-2 bg-amber-400 rounded-full animate-pulse" id="rain-badge"></span>
+</button>
+<!-- Fullscreen / Zen mode button -->
+<button class="glass-pill p-2 rounded-full text-zinc-300 hover:text-white transition-all flex items-center justify-center" id="zen-btn" title="Zen Focus Mode">
+<i class="w-4 h-4" data-lucide="sparkles"></i>
+</button>
+<!-- Settings / Info modal button -->
+<button class="glass-pill p-2 rounded-full text-zinc-300 hover:text-white transition-all flex items-center justify-center" id="info-btn" title="Session Info">
+<i class="w-4 h-4" data-lucide="clock"></i>
+</button>
+</div>
+</header>
+<div class="hidden fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" id="rain-playlist-panel" role="dialog" aria-modal="true" aria-labelledby="rain-playlist-title">
+<div class="glass-card w-full max-w-md rounded-2xl p-4 border border-white/15 shadow-2xl">
+<div class="flex items-center justify-between mb-3">
+<h2 class="text-sm font-semibold tracking-wide text-zinc-100" id="rain-playlist-title">Rain Sounds</h2>
+<button class="text-zinc-400 hover:text-white p-1 rounded transition-colors" id="rain-close-btn" title="Close Rain Sounds playlist" aria-label="Close Rain Sounds playlist"><i class="w-4 h-4" data-lucide="x"></i></button>
+</div>
+<div class="w-full overflow-hidden rounded-xl border border-white/10 bg-black/40">
+<iframe allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" allowfullscreen="" frameborder="0" height="352" loading="lazy" title="Rain sounds playlist on Spotify" src="https://open.spotify.com/embed/playlist/4eWBwGl0c5wtp6k5Krp6My?utm_source=generator&amp;theme=0" style="border-radius:12px" width="100%"></iframe>
+</div>
+</div>
+</div>
+<!-- Center Layout: Glassmorphic Pomodoro Card -->
+<main class="my-auto py-4 flex flex-col items-center justify-center w-full">
+<div class="glass-card w-full rounded-3xl p-6 sm:p-7 flex flex-col items-center relative transition-all duration-300 border border-white/15" id="main-card">
+<!-- Subtle Glow Accent Behind Card -->
+<div class="absolute -top-10 left-1/2 -translate-x-1/2 w-48 h-20 bg-amber-500/20 blur-3xl pointer-events-none rounded-full transition-all duration-700" id="ambient-glow"></div>
+<!-- Mode Navigation Tabs -->
+<div class="flex items-center bg-black/40 p-1 rounded-full border border-white/10 mb-7 shadow-inner">
+<button class="px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 flex items-center space-x-1.5 bg-white/15 text-white shadow-sm border border-white/10" id="tab-work" aria-pressed="true">
+<i class="w-3.5 h-3.5 text-amber-400" data-lucide="flame"></i>
+<span>Work (25m)</span>
+</button>
+<button class="px-4 py-1.5 rounded-full text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-all duration-200 flex items-center space-x-1.5 border border-transparent" id="tab-short" aria-pressed="false">
+<i class="w-3.5 h-3.5" data-lucide="coffee"></i>
+<span>Short Break (5m)</span>
+</button>
+</div>
+<!-- Circular Progress + Timer Typography -->
+<div class="relative w-64 h-64 flex items-center justify-center my-1">
+<!-- Circular Progress SVG -->
+<svg class="w-full h-full -rotate-90 transform" viewbox="0 0 240 240">
+<!-- Background Track -->
+<circle class="stroke-white/10" cx="120" cy="120" fill="transparent" r="104" stroke-width="6"></circle>
+<!-- Animated Progress Bar -->
+<circle class="stroke-amber-400 timer-ring" cx="120" cy="120" fill="transparent" id="progress-ring" r="104" stroke-dasharray="653.45" stroke-dashoffset="0" stroke-linecap="round" stroke-width="6"></circle>
+</svg>
+<!-- Digital Clock Display Inside Circle -->
+<div class="absolute inset-0 flex flex-col items-center justify-center select-none pointer-events-none">
+<span class="font-mono text-6xl font-extralight tracking-tight text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)]" id="timer-display" style="font-variant-numeric: tabular-nums; font-weight: 200; letter-spacing: -0.04em;">25:00</span>
+<div class="flex items-center space-x-1.5 mt-2 text-zinc-400 text-xs font-medium tracking-wider uppercase">
+<span class="text-amber-300 font-semibold tracking-wider" id="session-tag">DEEP FOCUS</span>
+<span class="text-zinc-600">•</span>
+<span class="text-zinc-400 font-medium" id="round-indicator">ROUND 1/4</span>
+</div>
+</div>
+</div>
+<!-- Controls: Minimalist Buttons (Start / Pause / Reset) -->
+<div class="flex items-center justify-center space-x-5 mt-6 w-full">
+<!-- Reset Button -->
+<button class="glass-pill p-3.5 rounded-full text-zinc-400 hover:text-white hover:bg-white/15 transition-all duration-200 active:scale-95 group" id="reset-btn" title="Reset Timer (R)">
+<i class="w-5 h-5 group-hover:-rotate-45 transition-transform duration-300" data-lucide="rotate-ccw"></i>
+</button>
+<!-- Primary Start / Pause Button -->
+<button class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 p-5 rounded-full shadow-lg transition-all duration-300 active:scale-95 flex items-center justify-center font-bold relative" id="play-pause-btn" style="box-shadow: 0 0 25px rgba(245, 158, 11, 0.35), 0 10px 25px -5px rgba(0,0,0,0.5);" title="Start Focus Session (Space)">
+<i class="w-6 h-6 fill-stone-950 ml-0.5" data-lucide="play" id="play-icon"></i>
+<i class="w-6 h-6 fill-stone-950 hidden" data-lucide="pause" id="pause-icon"></i>
+</button>
+<!-- Fast-Forward / Skip Button -->
+<button class="glass-pill p-3.5 rounded-full text-zinc-400 hover:text-white hover:bg-white/15 transition-all duration-200 active:scale-95 group" id="skip-btn" title="Skip to Next Session (S)">
+<i class="w-5 h-5 group-hover:translate-x-0.5 transition-transform duration-200" data-lucide="skip-forward"></i>
+</button>
+</div>
+<!-- Subtle Motivational Note / Status -->
+<div class="mt-6 text-center">
+<p class="text-xs text-zinc-400/90 font-light tracking-wide italic" id="motivational-quote">
+            "Flow with the rain, one breath at a time."
+          </p>
+</div>
+</div>
+</main>
+<!-- Bottom Section: Spotify Widget & Quick Tools -->
+<footer class="w-full pb-2 transition-opacity duration-300" id="footer-section">
+<!-- Spotify Widget Drawer / Floating Capsule -->
+<div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 w-80 max-w-[calc(100vw-2rem)] glass-card rounded-2xl p-3 border border-white/15 shadow-xl transition-all duration-300 relative group overflow-hidden">
+<div class="flex items-center justify-between mb-2 px-1">
+<div class="flex items-center space-x-2">
+<!-- Spotify Green Icon -->
+<div class="w-6 h-6 rounded-full bg-[#1DB954] flex items-center justify-center shadow-sm">
+<svg class="w-3.5 h-3.5 fill-black" viewbox="0 0 24 24">
+<path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.497 17.306c-.218.358-.684.471-1.042.253-2.855-1.745-6.449-2.14-10.682-1.173-.41.094-.817-.16-.911-.57-.094-.41.16-.817.57-.911 4.636-1.059 8.608-.611 11.812 1.349.358.218.471.684.253 1.042zm1.468-3.264c-.275.448-.862.592-1.31.317-3.269-2.01-8.252-2.592-12.118-1.418-.503.153-1.037-.134-1.19-.637-.153-.503.134-1.037.637-1.19 4.417-1.341 9.911-.692 13.664 1.618.448.275.592.862.317 1.31zm.126-3.41c-3.918-2.327-10.375-2.541-14.122-1.403-.6.182-1.238-.163-1.42-.763-.182-.6.163-1.238.763-1.42 4.305-1.307 11.43-1.055 15.937 1.62.54.321.716 1.023.395 1.563-.321.54-1.023.716-1.553.403z"></path>
+</svg>
+</div>
+<span class="text-xs font-semibold text-zinc-200 tracking-wide">Spotify Playlist</span>
+</div>
+<!-- Toggle Spotify collapse/expand button -->
+<div class="flex items-center space-x-1.5">
+<span class="text-[10px] text-zinc-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">Spotify</span>
+<button class="text-zinc-400 hover:text-white p-1 rounded transition-colors" id="spotify-collapse-btn" title="Toggle Embed Size">
+<i class="w-4 h-4 transition-transform duration-200" data-lucide="chevron-down" id="spotify-chevron"></i>
+</button>
+</div>
+</div>
+<!-- Embedded Spotify Player iframe -->
+<div class="w-full transition-all duration-300 rounded-xl overflow-hidden border border-white/10 bg-black/40" id="spotify-wrapper">
+<iframe allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" allowfullscreen="" frameborder="0" height="152" id="spotify-iframe" loading="lazy" title="Spotify playlist player" src="https://open.spotify.com/embed/playlist/37i9dQZF1EVHGWrwldPRtj?utm_source=generator&amp;theme=0" style="border-radius:12px" width="100%">
+</iframe>
+</div>
+</div>
+<!-- Quick Session Completion Tracker Bar -->
+<div class="fixed bottom-[15rem] left-1/2 -translate-x-1/2 z-20 flex items-center justify-between w-80 max-w-[calc(100vw-2rem)] rounded-xl glass-card px-3 py-2 text-[11px] text-zinc-400 transition-all duration-300" id="focus-tracker">
+<div class="flex items-center space-x-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+<span>Today: <strong class="text-zinc-200" id="total-focus-time">0m</strong> focused</span>
+</div>
+<div class="flex items-center space-x-2">
+<button class="hover:text-amber-300 transition-colors" id="quick-work-btn">25m Work</button>
+<span>·</span>
+<button class="hover:text-amber-300 transition-colors" id="quick-break-btn">5m Break</button>
+</div>
+</div>
+</footer>
+</div>
+<!-- Interactive JavaScript Logic -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Initialize Icons
+      lucide.createIcons();
+
+      // 2. Constants & Mode definitions
+      const MODES = {
+        work: {
+          duration: 25 * 60, // 1500 seconds
+          title: 'DEEP FOCUS',
+          strokeClass: 'stroke-amber-400',
+          textClass: 'text-amber-300',
+          glowClass: 'bg-amber-500/20',
+          quote: '"Flow with the rain, one breath at a time."'
+        },
+        short: {
+          duration: 5 * 60, // 300 seconds
+          title: 'SHORT BREAK',
+          strokeClass: 'stroke-sky-400',
+          textClass: 'text-sky-300',
+          glowClass: 'bg-sky-500/20',
+          quote: '"Hydrate, stretch, and let your eyes rest."'
+        }
+      };
+
+      // Progress Ring Circumference: 2 * Math.PI * 104 = ~653.451
+      const RADIUS = 104;
+      const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+      // Persist today's completed focus time without requiring an account.
+      function getTodayFocusStorageKey() {
+        const today = new Date();
+        const date = [
+          today.getFullYear(),
+          String(today.getMonth() + 1).padStart(2, '0'),
+          String(today.getDate()).padStart(2, '0')
+        ].join('-');
+        return `auradesk-focus-minutes-${date}`;
+      }
+
+      function loadTodayFocusMinutes(storageKey) {
+        try {
+          const storedMinutes = Number(window.localStorage.getItem(storageKey));
+          return Number.isInteger(storedMinutes) && storedMinutes >= 0 ? storedMinutes : 0;
+        } catch (e) {
+          return 0;
+        }
+      }
+
+      function saveTodayFocusMinutes(minutes, storageKey) {
+        try {
+          window.localStorage.setItem(storageKey, String(minutes));
+        } catch (e) {
+          console.warn('Could not save today’s focus time:', e);
+        }
+      }
+
+      // State
+      let currentMode = 'work';
+      let totalSeconds = MODES[currentMode].duration;
+      let remainingSeconds = totalSeconds;
+      let timerInterval = null;
+      let timerDeadline = null;
+      let isRunning = false;
+      let currentRound = 1;
+      let totalRounds = 4;
+      let focusStorageKey = getTodayFocusStorageKey();
+      let totalFocusedMinutes = loadTodayFocusMinutes(focusStorageKey);
+
+      // DOM Elements
+      const timerDisplay = document.getElementById('timer-display');
+      const progressRing = document.getElementById('progress-ring');
+      const playPauseBtn = document.getElementById('play-pause-btn');
+      const playIcon = document.getElementById('play-icon');
+      const pauseIcon = document.getElementById('pause-icon');
+      const resetBtn = document.getElementById('reset-btn');
+      const skipBtn = document.getElementById('skip-btn');
+      const tabWork = document.getElementById('tab-work');
+      const tabShort = document.getElementById('tab-short');
+      const sessionTag = document.getElementById('session-tag');
+      const roundIndicator = document.getElementById('round-indicator');
+      const motivationalQuote = document.getElementById('motivational-quote');
+      const totalFocusTimeEl = document.getElementById('total-focus-time');
+      const mainCard = document.getElementById('main-card');
+      const ambientGlow = document.getElementById('ambient-glow');
+      const headerPulsePing = document.getElementById('header-pulse-ping');
+      totalFocusTimeEl.textContent = `${totalFocusedMinutes}m`;
+
+      function syncTodayFocusMinutes() {
+        const currentStorageKey = getTodayFocusStorageKey();
+        if (currentStorageKey === focusStorageKey) return;
+
+        focusStorageKey = currentStorageKey;
+        totalFocusedMinutes = loadTodayFocusMinutes(focusStorageKey);
+        totalFocusTimeEl.textContent = `${totalFocusedMinutes}m`;
+      }
+
+      // Setup Ring Stroke
+      progressRing.style.strokeDasharray = `${CIRCUMFERENCE}`;
+      progressRing.style.strokeDashoffset = '0';
+
+      // 3. Audio Notification System (Web Audio API Synthesizer)
+      let sharedAudioCtx = null;
+      function getAudioContext() {
+        if (!sharedAudioCtx) {
+          sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (sharedAudioCtx.state === 'suspended') {
+          sharedAudioCtx.resume();
+        }
+        return sharedAudioCtx;
+      }
+
+      function playNotificationChime() {
+        try {
+          const ctx = getAudioContext();
+          const now = ctx.currentTime;
+          
+          // Gentle melodic bell chord (E5, G#5, B5)
+          const notes = [659.25, 830.61, 987.77];
+          notes.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+
+            // Envelope
+            gain.gain.setValueAtTime(0, now + idx * 0.12);
+            gain.gain.linearRampToValueAtTime(0.18, now + idx * 0.12 + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.12 + 1.8);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(now + idx * 0.12);
+            osc.stop(now + idx * 0.12 + 1.85);
+          });
+        } catch (e) {
+          console.warn('Web Audio error:', e);
+        }
+      }
+
+      // 4. Timer Rendering Logic
+      function renderTime() {
+        syncTodayFocusMinutes();
+        const mins = Math.floor(remainingSeconds / 60);
+        const secs = remainingSeconds % 60;
+        const formatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        
+        timerDisplay.textContent = formatted;
+        document.title = `${formatted} · Focus Space`;
+
+        // SVG Ring calculation: offset goes from 0 (full) to CIRCUMFERENCE (empty)
+        // fraction remaining = remainingSeconds / totalSeconds
+        const fractionRemaining = remainingSeconds / totalSeconds;
+        const offset = CIRCUMFERENCE * (1 - fractionRemaining);
+        progressRing.style.strokeDashoffset = offset;
+      }
+
+      function updatePlayStateUI(running) {
+        if (running) {
+          playIcon.classList.add('hidden');
+          pauseIcon.classList.remove('hidden');
+          mainCard.classList.add('timer-running');
+          headerPulsePing.classList.remove('hidden');
+          playPauseBtn.setAttribute('title', 'Pause Focus Session (Space)');
+        } else {
+          playIcon.classList.remove('hidden');
+          pauseIcon.classList.add('hidden');
+          mainCard.classList.remove('timer-running');
+          headerPulsePing.classList.add('hidden');
+          playPauseBtn.setAttribute('title', 'Start Focus Session (Space)');
+        }
+      }
+
+      function startCountdown() {
+        if (isRunning || remainingSeconds <= 0) return;
+        try {
+          getAudioContext(); // Pre-warm audio on user interaction
+        } catch (e) {
+          console.warn('Web Audio is unavailable:', e);
+        }
+        isRunning = true;
+        timerDeadline = Date.now() + remainingSeconds * 1000;
+        updatePlayStateUI(true);
+
+        timerInterval = setInterval(() => {
+          const nextRemaining = Math.max(0, Math.ceil((timerDeadline - Date.now()) / 1000));
+          if (nextRemaining !== remainingSeconds) {
+            remainingSeconds = nextRemaining;
+            renderTime();
+          }
+          if (remainingSeconds === 0) {
+            handleTimerComplete();
+          }
+        }, 250);
+      }
+
+      function pauseCountdown() {
+        let didExpire = false;
+        if (isRunning && timerDeadline !== null) {
+          remainingSeconds = Math.max(0, Math.ceil((timerDeadline - Date.now()) / 1000));
+          didExpire = remainingSeconds === 0;
+          renderTime();
+        }
+        clearInterval(timerInterval);
+        timerInterval = null;
+        timerDeadline = null;
+        isRunning = false;
+        updatePlayStateUI(false);
+        return didExpire;
+      }
+
+      function toggleTimer() {
+        if (isRunning) {
+          if (pauseCountdown()) handleTimerComplete();
+        } else {
+          startCountdown();
+        }
+      }
+
+      function resetTimer() {
+        if (pauseCountdown()) handleTimerComplete();
+        remainingSeconds = totalSeconds;
+        renderTime();
+      }
+
+      function handleTimerComplete() {
+        pauseCountdown();
+        playNotificationChime();
+
+        if (currentMode === 'work') {
+          totalFocusedMinutes += MODES.work.duration / 60;
+          totalFocusTimeEl.textContent = `${totalFocusedMinutes}m`;
+          saveTodayFocusMinutes(totalFocusedMinutes, focusStorageKey);
+          
+          if (currentRound < totalRounds) {
+            currentRound++;
+          } else {
+            currentRound = 1;
+          }
+          roundIndicator.textContent = `ROUND ${currentRound}/${totalRounds}`;
+        }
+      }
+
+      function switchMode(newMode) {
+        if (pauseCountdown()) handleTimerComplete();
+        currentMode = newMode;
+        totalSeconds = MODES[newMode].duration;
+        remainingSeconds = totalSeconds;
+
+        const config = MODES[newMode];
+
+        // Tab styling active/inactive states
+        if (newMode === 'work') {
+          tabWork.className = "px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 flex items-center space-x-1.5 bg-white/15 text-white shadow-sm border border-white/10";
+          tabShort.className = "px-4 py-1.5 rounded-full text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-all duration-200 flex items-center space-x-1.5 border border-transparent";
+          tabWork.setAttribute('aria-pressed', 'true');
+          tabShort.setAttribute('aria-pressed', 'false');
+          tabWork.querySelector('[data-lucide]').classList.add('text-amber-400');
+          tabShort.querySelector('[data-lucide]').classList.remove('text-sky-400');
+          progressRing.classList.remove('stroke-sky-400');
+          progressRing.classList.add('stroke-amber-400');
+          sessionTag.className = "text-amber-300 font-semibold tracking-wider";
+          ambientGlow.className = "absolute -top-10 left-1/2 -translate-x-1/2 w-48 h-20 bg-amber-500/20 blur-3xl pointer-events-none rounded-full transition-all duration-700";
+        } else {
+          tabShort.className = "px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 flex items-center space-x-1.5 bg-white/15 text-white shadow-sm border border-white/10";
+          tabWork.className = "px-4 py-1.5 rounded-full text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-all duration-200 flex items-center space-x-1.5 border border-transparent";
+          tabWork.setAttribute('aria-pressed', 'false');
+          tabShort.setAttribute('aria-pressed', 'true');
+          tabWork.querySelector('[data-lucide]').classList.remove('text-amber-400');
+          tabShort.querySelector('[data-lucide]').classList.add('text-sky-400');
+          progressRing.classList.remove('stroke-amber-400');
+          progressRing.classList.add('stroke-sky-400');
+          sessionTag.className = "text-sky-300 font-semibold tracking-wider";
+          ambientGlow.className = "absolute -top-10 left-1/2 -translate-x-1/2 w-48 h-20 bg-sky-500/20 blur-3xl pointer-events-none rounded-full transition-all duration-700";
+        }
+
+        sessionTag.textContent = config.title;
+        motivationalQuote.textContent = config.quote;
+        renderTime();
+      }
+
+      function skipSession() {
+        if (pauseCountdown()) {
+          handleTimerComplete();
+          switchMode(currentMode === 'work' ? 'short' : 'work');
+          return;
+        }
+        if (currentMode === 'work') {
+          if (currentRound < totalRounds) {
+            currentRound++;
+          } else {
+            currentRound = 1;
+          }
+          roundIndicator.textContent = `ROUND ${currentRound}/${totalRounds}`;
+          switchMode('short');
+        } else {
+          switchMode('work');
+        }
+      }
+
+      // Event Listeners for Controls
+      playPauseBtn.addEventListener('click', toggleTimer);
+      resetBtn.addEventListener('click', resetTimer);
+      skipBtn.addEventListener('click', skipSession);
+
+      tabWork.addEventListener('click', () => switchMode('work'));
+      tabShort.addEventListener('click', () => switchMode('short'));
+
+      const quickWorkBtn = document.getElementById('quick-work-btn');
+      const quickBreakBtn = document.getElementById('quick-break-btn');
+      if (quickWorkBtn) quickWorkBtn.addEventListener('click', () => switchMode('work'));
+      if (quickBreakBtn) quickBreakBtn.addEventListener('click', () => switchMode('short'));
+
+      // Keyboard shortcuts: Space to toggle, R to reset, S to skip
+      window.addEventListener('keydown', (e) => {
+        const target = e.target;
+        const isTextEntry = target && (
+          target.isContentEditable ||
+          ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
+        );
+        if (e.defaultPrevented || e.repeat || e.ctrlKey || e.metaKey || e.altKey || isTextEntry) return;
+
+        if (e.code === 'Space') {
+          e.preventDefault();
+          toggleTimer();
+        } else if (e.code === 'KeyR') {
+          resetTimer();
+        } else if (e.code === 'KeyS') {
+          skipSession();
+        }
+      });
+
+      // 5. Rain Sounds Spotify Playlist
+      const rainToggleBtn = document.getElementById('rain-toggle-btn');
+      const rainBadge = document.getElementById('rain-badge');
+      const rainPlaylistPanel = document.getElementById('rain-playlist-panel');
+      const rainCloseBtn = document.getElementById('rain-close-btn');
+
+      function setRainPlaylistOpen(isOpen) {
+        rainPlaylistPanel.classList.toggle('hidden', !isOpen);
+        rainToggleBtn.setAttribute('aria-expanded', String(isOpen));
+        rainToggleBtn.classList.toggle('bg-white/20', isOpen);
+        rainToggleBtn.classList.toggle('text-amber-300', isOpen);
+        rainBadge.classList.toggle('hidden', !isOpen);
+      }
+
+      rainToggleBtn.addEventListener('click', () => {
+        setRainPlaylistOpen(rainPlaylistPanel.classList.contains('hidden'));
+      });
+      rainCloseBtn.addEventListener('click', () => setRainPlaylistOpen(false));
+      rainPlaylistPanel.addEventListener('click', (event) => {
+        if (event.target === rainPlaylistPanel) setRainPlaylistOpen(false);
+      });
+      window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !rainPlaylistPanel.classList.contains('hidden')) {
+          setRainPlaylistOpen(false);
+        }
+      });
+
+      // 6. Spotify Collapse / Expand
+      let spotifyExpanded = true;
+      const spotifyCollapseBtn = document.getElementById('spotify-collapse-btn');
+      const spotifyChevron = document.getElementById('spotify-chevron');
+      const spotifyWrapper = document.getElementById('spotify-wrapper');
+      const focusTracker = document.getElementById('focus-tracker');
+
+      spotifyCollapseBtn.addEventListener('click', () => {
+        spotifyExpanded = !spotifyExpanded;
+        if (spotifyExpanded) {
+          spotifyWrapper.style.maxHeight = '152px';
+          spotifyWrapper.style.opacity = '1';
+          spotifyWrapper.style.marginTop = '0px';
+          spotifyChevron.style.transform = 'rotate(0deg)';
+          focusTracker.classList.remove('bottom-20');
+          focusTracker.classList.add('bottom-[15rem]');
+        } else {
+          spotifyWrapper.style.maxHeight = '0px';
+          spotifyWrapper.style.opacity = '0';
+          spotifyWrapper.style.marginTop = '-6px';
+          spotifyChevron.style.transform = 'rotate(180deg)';
+          focusTracker.classList.remove('bottom-[15rem]');
+          focusTracker.classList.add('bottom-20');
+        }
+      });
+
+      // 7. Zen Mode Toggle
+      let isZen = false;
+      const zenBtn = document.getElementById('zen-btn');
+      const footerSection = document.getElementById('footer-section');
+
+      zenBtn.addEventListener('click', () => {
+        isZen = !isZen;
+        if (isZen) {
+          footerSection.classList.add('opacity-10', 'pointer-events-none');
+          zenBtn.classList.add('text-amber-300', 'bg-white/20');
+        } else {
+          footerSection.classList.remove('opacity-10', 'pointer-events-none');
+          zenBtn.classList.remove('text-amber-300', 'bg-white/20');
+        }
+      });
+
+      // 8. Info Modal
+      document.getElementById('info-btn').addEventListener('click', () => {
+        alert("✨ Focus Space Pomodoro\n\n• Work Session: 25 mins\n• Short Break: 5 mins\n• Controls: [Space] Start/Pause, [R] Reset, [S] Skip\n• Rain Icon: Generative relaxing rain sound\n• Spotify: Embedded lofi focus playlist");
+      });
+
+      // Initial visual render
+      renderTime();
+    });
+  </script>
+</body></html>
