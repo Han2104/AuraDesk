@@ -210,6 +210,9 @@
 </div>
 <!-- Toggle Spotify collapse/expand button -->
 <div class="flex items-center space-x-1.5">
+<button class="text-zinc-400 hover:text-amber-300 p-1 rounded transition-colors" id="spotify-choose-btn" title="Search and choose Spotify music" aria-label="Search and choose Spotify music">
+<i class="w-4 h-4" data-lucide="search"></i>
+</button>
 <span class="text-[10px] text-zinc-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">Spotify</span>
 <button class="text-zinc-400 hover:text-white p-1 rounded transition-colors" id="spotify-collapse-btn" title="Toggle Embed Size">
 <i class="w-4 h-4 transition-transform duration-200" data-lucide="chevron-down" id="spotify-chevron"></i>
@@ -222,11 +225,31 @@
 </iframe>
 </div>
 </div>
+<div class="hidden fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" id="spotify-picker-panel" role="dialog" aria-modal="true" aria-labelledby="spotify-picker-title">
+<div class="glass-card w-full max-w-md rounded-2xl p-4 border border-white/15 shadow-2xl">
+<div class="flex items-center justify-between mb-3">
+<h2 class="text-sm font-semibold tracking-wide text-zinc-100" id="spotify-picker-title">Find music on Spotify</h2>
+<button class="text-zinc-400 hover:text-white p-1 rounded transition-colors" id="spotify-picker-close" title="Close Spotify search" aria-label="Close Spotify search"><i class="w-4 h-4" data-lucide="x"></i></button>
+</div>
+<p class="text-xs leading-relaxed text-zinc-400 mb-3">Search Spotify, then copy a track or playlist link and paste it below to play it here.</p>
+<form class="flex gap-2 mb-4" id="spotify-search-form">
+<label class="sr-only" for="spotify-search-query">Search Spotify</label>
+<input class="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-amber-400/60" id="spotify-search-query" name="q" placeholder="Song, artist, or playlist" type="search" required>
+<button class="rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-stone-950 hover:bg-amber-400 transition-colors" type="submit">Search</button>
+</form>
+<form class="flex gap-2" id="spotify-load-form">
+<label class="sr-only" for="spotify-content-link">Spotify song or playlist link</label>
+<input class="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-amber-400/60" id="spotify-content-link" name="spotifyLink" placeholder="Paste Spotify link or URI" type="text" required>
+<button class="rounded-lg border border-white/15 px-3 py-2 text-sm text-zinc-100 hover:bg-white/10 transition-colors" type="submit">Play here</button>
+</form>
+<p class="mt-2 min-h-4 text-xs text-zinc-400" id="spotify-picker-status" aria-live="polite"></p>
+</div>
+</div>
 <!-- Quick Session Completion Tracker Bar -->
 <div class="fixed bottom-[15rem] left-1/2 -translate-x-1/2 z-20 flex items-center justify-between w-80 max-w-[calc(100vw-2rem)] rounded-xl glass-card px-3 py-2 text-[11px] text-zinc-400 transition-all duration-300" id="focus-tracker">
 <div class="flex items-center space-x-1.5">
 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-<span>Today: <strong class="text-zinc-200" id="total-focus-time">0m</strong> focused</span>
+<span><span id="focus-date-label"></span>: <strong class="text-zinc-200" id="total-focus-time">0m</strong> focused</span>
 </div>
 <div class="flex items-center space-x-2">
 <button class="hover:text-amber-300 transition-colors" id="quick-work-btn">25m Work</button>
@@ -320,9 +343,19 @@
       const roundIndicator = document.getElementById('round-indicator');
       const motivationalQuote = document.getElementById('motivational-quote');
       const totalFocusTimeEl = document.getElementById('total-focus-time');
+      const focusDateLabelEl = document.getElementById('focus-date-label');
       const mainCard = document.getElementById('main-card');
       const ambientGlow = document.getElementById('ambient-glow');
       const headerPulsePing = document.getElementById('header-pulse-ping');
+      function renderFocusDateLabel() {
+        focusDateLabelEl.textContent = new Date().toLocaleDateString(undefined, {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        });
+      }
+
+      renderFocusDateLabel();
       totalFocusTimeEl.textContent = `${totalFocusedMinutes}m`;
 
       function syncTodayFocusMinutes() {
@@ -331,8 +364,11 @@
 
         focusStorageKey = currentStorageKey;
         totalFocusedMinutes = loadTodayFocusMinutes(focusStorageKey);
+        renderFocusDateLabel();
         totalFocusTimeEl.textContent = `${totalFocusedMinutes}m`;
       }
+
+      setInterval(syncTodayFocusMinutes, 60_000);
 
       // Setup Ring Stroke
       progressRing.style.strokeDasharray = `${CIRCUMFERENCE}`;
@@ -599,7 +635,91 @@
         }
       });
 
-      // 6. Spotify Collapse / Expand
+      // 6. Spotify Search and Embed Selection
+      const spotifyPickerPanel = document.getElementById('spotify-picker-panel');
+      const spotifyChooseBtn = document.getElementById('spotify-choose-btn');
+      const spotifyPickerClose = document.getElementById('spotify-picker-close');
+      const spotifySearchForm = document.getElementById('spotify-search-form');
+      const spotifySearchQuery = document.getElementById('spotify-search-query');
+      const spotifyLoadForm = document.getElementById('spotify-load-form');
+      const spotifyContentLink = document.getElementById('spotify-content-link');
+      const spotifyPickerStatus = document.getElementById('spotify-picker-status');
+      const spotifyIframe = document.getElementById('spotify-iframe');
+
+      function setSpotifyPickerOpen(isOpen) {
+        spotifyPickerPanel.classList.toggle('hidden', !isOpen);
+      }
+
+      function parseSpotifyContent(value) {
+        const input = value.trim();
+        const uriMatch = input.match(/^spotify:(track|playlist|album):([A-Za-z0-9]+)$/i);
+        if (uriMatch) return { type: uriMatch[1].toLowerCase(), id: uriMatch[2] };
+
+        try {
+          const url = new URL(input);
+          if (!['open.spotify.com', 'www.open.spotify.com'].includes(url.hostname.toLowerCase())) return null;
+          const parts = url.pathname.split('/').filter(Boolean);
+          const typeIndex = parts.findIndex((part) => ['track', 'playlist', 'album'].includes(part.toLowerCase()));
+          if (typeIndex < 0 || !parts[typeIndex + 1]) return null;
+          const type = parts[typeIndex].toLowerCase();
+          const id = parts[typeIndex + 1];
+          return /^[A-Za-z0-9]+$/.test(id) ? { type, id } : null;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function setSpotifyContent(content, persist = false) {
+        spotifyIframe.src = `https://open.spotify.com/embed/${content.type}/${content.id}?utm_source=generator&theme=0`;
+        spotifyIframe.title = `Spotify ${content.type} player`;
+        if (persist) {
+          try {
+            window.localStorage.setItem('auradesk-spotify-selection', `spotify:${content.type}:${content.id}`);
+          } catch (e) {
+            console.warn('Could not save the Spotify selection:', e);
+          }
+        }
+      }
+
+      try {
+        const savedSpotifyContent = parseSpotifyContent(window.localStorage.getItem('auradesk-spotify-selection') || '');
+        if (savedSpotifyContent) setSpotifyContent(savedSpotifyContent);
+      } catch (e) {
+        // Keep the default playlist when local storage is unavailable.
+      }
+
+      spotifyChooseBtn.addEventListener('click', () => setSpotifyPickerOpen(true));
+      spotifyPickerClose.addEventListener('click', () => setSpotifyPickerOpen(false));
+      spotifyPickerPanel.addEventListener('click', (event) => {
+        if (event.target === spotifyPickerPanel) setSpotifyPickerOpen(false);
+      });
+      window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !spotifyPickerPanel.classList.contains('hidden')) {
+          setSpotifyPickerOpen(false);
+        }
+      });
+      spotifySearchForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const query = spotifySearchQuery.value.trim();
+        if (!query) return;
+        window.open(`https://open.spotify.com/search/${encodeURIComponent(query)}`, '_blank', 'noopener,noreferrer');
+      });
+      spotifyLoadForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const content = parseSpotifyContent(spotifyContentLink.value);
+        if (!content) {
+          spotifyPickerStatus.textContent = 'Enter a valid Spotify track, playlist, or album link.';
+          spotifyPickerStatus.classList.add('text-rose-300');
+          return;
+        }
+
+        setSpotifyContent(content, true);
+        spotifyPickerStatus.textContent = 'Spotify player updated.';
+        spotifyPickerStatus.classList.remove('text-rose-300');
+        setSpotifyPickerOpen(false);
+      });
+
+      // 7. Spotify Collapse / Expand
       let spotifyExpanded = true;
       const spotifyCollapseBtn = document.getElementById('spotify-collapse-btn');
       const spotifyChevron = document.getElementById('spotify-chevron');
@@ -625,7 +745,7 @@
         }
       });
 
-      // 7. Zen Mode Toggle
+      // 8. Zen Mode Toggle
       let isZen = false;
       const zenBtn = document.getElementById('zen-btn');
       const footerSection = document.getElementById('footer-section');
@@ -641,9 +761,9 @@
         }
       });
 
-      // 8. Info Modal
+      // 9. Info Modal
       document.getElementById('info-btn').addEventListener('click', () => {
-        alert("✨ Focus Space Pomodoro\n\n• Work Session: 25 mins\n• Short Break: 5 mins\n• Controls: [Space] Start/Pause, [R] Reset, [S] Skip\n• Rain Icon: Generative relaxing rain sound\n• Spotify: Embedded lofi focus playlist");
+        alert("✨ Focus Space Pomodoro\n\n• Work Session: 25 mins\n• Short Break: 5 mins\n• Controls: [Space] Start/Pause, [R] Reset, [S] Skip\n• Rain Icon: Spotify rain sounds playlist\n• Spotify: Search Spotify and load a track or playlist link");
       });
 
       // Initial visual render

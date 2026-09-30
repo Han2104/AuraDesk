@@ -7,8 +7,8 @@ AuraDesk (Focus Space) là ứng dụng desktop đa nền tảng giúp tập tru
 - Bộ đếm Work 25 phút và Short Break 5 phút, có Play/Pause, Reset, Skip và vòng Pomodoro.
 - Hiển thị tiến độ bằng vòng tròn; khi phiên Work hoàn tất, ứng dụng cập nhật tổng phút tập trung trong ngày.
 - Lưu tổng thời gian tập trung theo ngày trên máy người dùng bằng `localStorage`.
-- Phát âm báo khi phiên hoàn tất và âm thanh mưa tạo bằng Web Audio API.
-- Trình phát Spotify ở góc dưới bên phải, cùng chế độ Zen và phím tắt.
+- Phát âm báo khi phiên hoàn tất; nút Rain Sounds mở playlist Spotify thư giãn.
+- Trình phát Spotify căn giữa cạnh dưới; tìm kiếm nhạc trên Spotify, tải track/playlist/album bằng liên kết hoặc URI và lưu lựa chọn trên máy.
 
 ## Chạy ứng dụng desktop
 
@@ -53,6 +53,6 @@ Sau đó mở `http://localhost:8000/client/code.html`.
 - **R**: đặt lại phiên hiện tại.
 - **S**: chuyển sang phiên kế tiếp.
 - Chọn tab **Work** hoặc **Short Break** để đổi chế độ và đặt lại thời gian.
-- Dùng các nút trên giao diện để bật âm thanh mưa, bật Zen mode, thu gọn player Spotify hoặc xem thông tin phiên.
+- Dùng nút Rain Sounds để mở playlist mưa; nút kính lúp trên player để tìm nhạc trên Spotify. Tìm nội dung, sao chép liên kết Spotify rồi dán vào AuraDesk và chọn **Play here**. Có thể nhập liên kết track, playlist hoặc album (hoặc Spotify URI). Lựa chọn được lưu cục bộ trên máy. Các nút khác bật Zen mode, thu gọn player hoặc xem thông tin phiên.
 
 Các tài nguyên giao diện, font chữ, hình nền và trình phát Spotify hiện được tải từ các dịch vụ bên ngoài. Cần kết nối Internet để sử dụng đầy đủ trải nghiệm trong cả bản Electron và bản trình duyệt.
